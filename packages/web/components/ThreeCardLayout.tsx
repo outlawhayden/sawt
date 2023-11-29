@@ -1,3 +1,4 @@
+
 "use client";
 
 import { ICard } from "@/lib/api";
@@ -13,6 +14,9 @@ import { useState } from "react";
 import useClipboardApi from "use-clipboard-api";
 import { v4 as uuidv4 } from "uuid"; //will need
 import CommentBox from "./CommentBoxes";
+
+
+
 
 const MAX_CHARACTERS_PREVIEW = 300;
 
@@ -66,7 +70,8 @@ function markCardAsLiked(cardId: string) {
 }
 
 
-export default function ThreeCardLayout({ cards }: { cards: ICard }) {
+
+export default function ThreeCardLayout({ cards, userName }: { cards: ICard, userName: string }) {
 
   const [msgIndex, setMsgIndex] = useState<number>(0);
   const isLoading = !cards.responses || cards.responses.length <= 0;
@@ -89,82 +94,81 @@ export default function ThreeCardLayout({ cards }: { cards: ICard }) {
   }) => {
     try {
       
-      /* This commented out code is for if we want to add the ability to update previous comments.
-      */
-      // let { data: cards, error: fetchError } = await supabase
-      //   .from("cards")
-      //   .select("comment")
-      //   .eq("id", card.id)
-      //   .single();
+      
+      const { data: existingCard, error: fetchError } = await supabase
+        .from("cards")
+        .select("question_id, response_id")
+        .eq("id", card.id)
+        .single();
 
-      // if (fetchError) {
-      //   throw fetchError;
-      // }
+      if (fetchError) {
+        throw fetchError;
+      }
+      console.log(existingCard)
 
       // const newFeedbackId = uuidv4();
+      const user_id = `${userName}_${Date.now()}`;
 
-      // const newComment = { id: newFeedbackId, type: comment };
+      // const newComment = { comment: comment };
 
       // const existingComment = 
       //   existingCard.comment && Array.isArray(existingCard.comment)
       //     ? existingCard.comment
       //     : [];
       // const updatedComment = [...existingComment, newComment];
+    
+      // const { data, error } = await supabase
+      //   .from("UserFeedback")
+
+        // .update({ comment: updatedComment })
+        // .eq("id", card.id)
+        // .select()
 
       const { data, error } = await supabase
-        .from("cards")
-        .update([{ comment: comment }])
-        .eq("id", card.id)
-        .select()
-
+      .from("UserFeedback")
+      .insert([
+        { question_id: existingCard.question_id, response_id: existingCard.response_id, user_id: user_id, comment: comment},
+      ])
+      .select()
+        
       if (error) {
         throw error;
       }
     } catch (error) {}
   };
 
-
   return (
-    <div className="flex justify-center mt-10 space-x-4-x">
-      {cards && cards.map((card, index) => (
-        <div key={index} className={`my-6 rounded-lg bg-blue p-6 text-primary 
-        ${isLoading ? "border-4 border-dashed border-yellow-500" : ""
-          }`}>
-          <Link href={`${CARD_SHOW_PATH}/${card.id}`}>
-            <div>
-              <h4 className="text-xl font-bold">{card.title}</h4>
-              <h6 className="text-xs">
-                <span className="text-purple">
-                  {card.is_mine ? "You | " : null}
-                </span>
-                <span className="text-secondary">{prettyCreatedAt}</span>
-              </h6>
+    <div>
+ 
+      <div className="flex justify-center mt-10 space-x-4-x">
+        {cards && cards.map((card, index) => (
+          <div key={index} className={`my-6 rounded-lg bg-blue p-6 text-primary`}>
+            <Link href={`${CARD_SHOW_PATH}/${card.id}`}>
+              <div>
+                <h4 className="text-xl font-bold">{card.title}</h4>
+                <h6 className="text-xs">
+                  <span className="text-purple">
+                    {card.is_mine ? "You | " : null}
+                  </span>
+                </h6>
 
-              {!isLoading && !!card.responses ? (
-                <p className="my-5">
-                  {card.responses[0].response.substring(0, MAX_CHARACTERS_PREVIEW)}
-                  {card.responses[0].response.length > MAX_CHARACTERS_PREVIEW
-                    ? "..."
-                    : null}
-                </p>
-              ) : (
-                <p className="my-5">
-                  <FontAwesomeIcon
-                    icon={faSpinner}
-                    className="mx-2 h-5 w-5 animate-spin align-middle duration-300"
-                  />
-                  {LOADING_MESSAGES[msgIndex]}
-                </p>
-              )}
-            </div>
-          </Link>
-      <CommentBox
-        card = {card}
-        onSubmit={submitCommentFeedback}
-      />
-        </div>
-      ))
-      }
+                  <p className="my-5">
+                    {card.responses[0].response}
+                    {/* {card.responses[0].response.length > MAX_CHARACTERS_PREVIEW
+                      ? "..."
+                      : null} */}
+                  </p>
+              </div>
+            </Link>
+          <CommentBox
+            card = {card}
+            onSubmit={submitCommentFeedback}
+          />
+          </div>
+        ))
+        }
+
+      </div>
 
     </div>
   );
