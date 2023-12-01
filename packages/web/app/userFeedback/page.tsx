@@ -7,27 +7,39 @@ import ThreeCardLayout from '../../components/ThreeCardLayout';
 // import NextButton from '@/components/NextButton';
 import { useState, useEffect } from "react";
 import { ICard } from '@/lib/api';
+import Rubric from '@/components/Rubric';
 
 export const dynamic = "force-dynamic";
-export const questionArray = ["What recent policies has the New Orleans City Council enacted?", "How do the recent policies address issues of public safety in the city?", "What measures has the City Council taken to promote economic development in New Orleans?"];
+export const question_idArray = [1,2,3]
 
 export default function UserFeedback() {
   // const [currentIndex, setCurrentIndex] = useState<number>(randint(0,177));
   const [userName, setUserName] = useState("");
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [cardArray, setCardArray] = useState<Array<ICard> | null>(null);
+  const [rubricScores, setRubricScores] = useState<Record<string, number>>({});
 
   const handlePrevClick = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
+    // setRubricScores(createDefaultScores());
   }
 
   const handleNextClick = () => {
-    if (currentIndex < questionArray.length - 1) {
+    if (currentIndex < question_idArray.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
+    // setRubricScores(createDefaultScores());
   }
+
+  //potentially could set rubric back to 1s
+  // const createDefaultScores = () => {
+  //   return criteria.reduce((acc, criterion) => {
+  //     acc[criterion.id] = 1;
+  //     return acc;
+  //   }, {});
+  // };
 
   const handleNameChange = (e) => {
     setUserName(e.target.value);
@@ -37,11 +49,11 @@ export default function UserFeedback() {
     const getCards = async () => {
       try {
         const cardsArray = [];
-        for (let i = 0; i < questionArray.length; i++) {
+        for (let i = 1; i <= question_idArray.length; i++) {
           const { data: cards, error } = await supabase
-            .from('cards')
+            .from('cards_example')
             .select('*')
-            .eq("title", questionArray[i]);
+            .eq("question_id", i);
             // .eq("questionID", currentIndex)
 
 

@@ -15,7 +15,15 @@ import useClipboardApi from "use-clipboard-api";
 import { v4 as uuidv4 } from "uuid"; //will need
 import CommentBox from "./CommentBoxes";
 
+import Rubric from '@/components/Rubric';
 
+
+const criteria = [
+  { id: 'Accuracy', description: 'Accuracy' },
+  { id: 'Helpfulness', description: 'Helpfulness' },
+  { id: 'Balance', description: 'Balance' }
+  // Add more criteria as needed
+];
 
 
 const MAX_CHARACTERS_PREVIEW = 300;
@@ -84,11 +92,15 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       : moment().fromNow()
   );
 
+  const [rubricScores, setRubricScores] = useState<Record<string, number>>({});
+
   //Function that sends comments to supabase under respective card.comment
   const submitCommentFeedback = async ({
+    scores,
     comment,
     card
   }: {
+    scores: Record<string, number>;
     comment: string;
     card: ICard;
   }) => {
@@ -96,7 +108,7 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       
       
       const { data: existingCard, error: fetchError } = await supabase
-        .from("cards")
+        .from("cards_example")
         .select("question_id, response_id")
         .eq("id", card.id)
         .single();
@@ -109,25 +121,12 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       // const newFeedbackId = uuidv4();
       const user_id = `${userName}_${Date.now()}`;
 
-      // const newComment = { comment: comment };
 
-      // const existingComment = 
-      //   existingCard.comment && Array.isArray(existingCard.comment)
-      //     ? existingCard.comment
-      //     : [];
-      // const updatedComment = [...existingComment, newComment];
-    
-      // const { data, error } = await supabase
-      //   .from("UserFeedback")
-
-        // .update({ comment: updatedComment })
-        // .eq("id", card.id)
-        // .select()
 
       const { data, error } = await supabase
       .from("UserFeedback")
       .insert([
-        { question_id: existingCard.question_id, response_id: existingCard.response_id, user_id: user_id, comment: comment},
+        { question_id: existingCard.question_id, response_id: existingCard.response_id, user_id: user_id, comment: comment, accuracy: scores["Accuracy"], helpfulness: scores["Helpfulness"], balance: scores["Balance"] },
       ])
       .select()
         
@@ -139,13 +138,12 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
 
   return (
     <div>
- 
       <div className="flex justify-center mt-10 space-x-4-x">
         {cards && cards.map((card, index) => (
           <div key={index} className={`my-6 rounded-lg bg-blue p-6 text-primary`}>
             <Link href={`${CARD_SHOW_PATH}/${card.id}`}>
               <div>
-                <h4 className="text-xl font-bold">{card.title}</h4>
+                <h4 className="text-xl font-bold">{card.query}</h4>
                 <h6 className="text-xs">
                   <span className="text-purple">
                     {card.is_mine ? "You | " : null}
@@ -159,11 +157,21 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
                       : null} */}
                   </p>
               </div>
+              <hr></hr>
+          <label className="flex justify-center mt-10 space-x-1-x">Rubric</label>
+          <Rubric 
+            criteria={criteria}
+            onScoresChange={(scores) => setRubricScores(scores)}
+          />
             </Link>
           <CommentBox
+            scores={rubricScores}
             card = {card}
             onSubmit={submitCommentFeedback}
           />
+
+
+          
           </div>
         ))
         }

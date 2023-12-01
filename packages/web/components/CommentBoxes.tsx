@@ -1,22 +1,28 @@
+
 import { ICard } from "@/lib/api";
 import { faComment } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
+import Rubric from '@/components/Rubric';
 
 interface CommentBoxProps {
+    scores: Record<string, number>
     card: ICard;
-    onSubmit: ( data: { comment: string, card: ICard }) => void;
+    onSubmit: ( data: { comment: string, card: ICard, scores: Record<string, number> }) => void;
 }
 
-export default function CommentBox({ onSubmit, card }: CommentBoxProps) {
+export default function CommentBox({ onSubmit, card, scores }: CommentBoxProps) {
     const [comment, setComment] = useState<string>("");
+    // const [scores, setRubricScores] = useState<Record<string, number>>({});
+
     const handleSubmit = () => {
-        onSubmit( { comment , card});
+        onSubmit({ comment, card, scores});
         setComment("");
     };
 
 
     return (
+        
         <div className="my-12">
         <div className="relative  block">
         <label htmlFor="comment" className="mb-2 mt-4 block">
