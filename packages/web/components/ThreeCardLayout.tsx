@@ -108,7 +108,7 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       
       
       const { data: existingCard, error: fetchError } = await supabase
-        .from("cards_example")
+        .from("sawt_cards")
         .select("question_id, response_id")
         .eq("id", card.id)
         .single();
@@ -116,7 +116,7 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       if (fetchError) {
         throw fetchError;
       }
-      console.log(existingCard)
+      // console.log(existingCard)
 
       // const newFeedbackId = uuidv4();
       const user_id = `${userName}_${Date.now()}`;
@@ -138,27 +138,40 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
 
   return (
     <div>
-      <div className="flex justify-center mt-10 space-x-4-x">
-        {cards && cards.map((card, index) => (
-          <div key={index} className={`my-6 rounded-lg bg-blue p-6 text-primary`}>
+
+    {/*
+     <div>
+      {cards && cards.map((card, index) => (
+        <h4 className="text-xl font-bold">{card.query}</h4>
+      ))}
+      </div>
+    <div> */}
+    {cards && cards.map((card, index) => (
+      <div className="flex justify-center space-x-4-x">
+
+          <div key={index} className={`rounded-lg bg-blue p-6 text-primary`}>
+          <h4 className="text-xl font-bold">{card.query}</h4>
+  
             <Link href={`${CARD_SHOW_PATH}/${card.id}`}>
               <div>
-                <h4 className="text-xl font-bold">{card.query}</h4>
                 <h6 className="text-xs">
                   <span className="text-purple">
                     {card.is_mine ? "You | " : null}
                   </span>
                 </h6>
 
-                  <p className="my-5">
-                    {card.responses[0].response}
-                    {/* {card.responses[0].response.length > MAX_CHARACTERS_PREVIEW
-                      ? "..."
-                      : null} */}
-                  </p>
+                <div>
+                {card.responses.map((element, index) => (
+                    
+                    <p key={index} className="my-5">
+                      {element.response}
+                      
+                    </p>
+                  ))}
+                </div>
               </div>
               <hr></hr>
-          <label className="flex justify-center mt-10 space-x-1-x">Rubric</label>
+          {/* <label className="flex justify-center mt-10 space-x-1-x">Rubric</label> */}
           <Rubric 
             criteria={criteria}
             onScoresChange={(scores) => setRubricScores(scores)}
@@ -172,12 +185,16 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
 
 
           
-          </div>
+        </div>
+        </div>
         ))
         }
+        
+
+      
 
       </div>
+      // </div>
 
-    </div>
   );
 }

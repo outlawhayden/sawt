@@ -34,18 +34,20 @@ export default function CommentBox({ onSubmit, card, scores }: CommentBoxProps) 
         </label>
         <textarea
             id="comment"
-            className="h-20 w-full rounded border p-2"
+            className="h-32 w-full rounded border p-2"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Add feedback here"
         ></textarea>
         </div>
-        <button
-        onClick={handleSubmit}
-        className="bg-blue-500 rounded bg-secondary px-4 py-2 text-white"
-        >
-        Submit
-        </button>
+        <div className="flex justify-center mt-4">
+            <button
+                onClick={handleSubmit}
+                className="bg-blue-500 rounded bg-secondary px-4 py-2 text-white"
+            >
+                Submit
+            </button>
+        </div>
     </div>
     );
 }

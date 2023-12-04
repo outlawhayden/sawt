@@ -10,7 +10,8 @@ import { ICard } from '@/lib/api';
 import Rubric from '@/components/Rubric';
 
 export const dynamic = "force-dynamic";
-export const question_idArray = [1,2,3]
+// export const question_idArray = Array.from({ length: 99 }, (_, index) => index);
+export const question_idArray = [0,1,2];
 
 export default function UserFeedback() {
   // const [currentIndex, setCurrentIndex] = useState<number>(randint(0,177));
@@ -25,6 +26,8 @@ export default function UserFeedback() {
     }
     // setRubricScores(createDefaultScores());
   }
+
+  
 
   const handleNextClick = () => {
     if (currentIndex < question_idArray.length - 1) {
@@ -51,7 +54,7 @@ export default function UserFeedback() {
         const cardsArray = [];
         for (let i = 1; i <= question_idArray.length; i++) {
           const { data: cards, error } = await supabase
-            .from('cards_example')
+            .from('sawt_cards')
             .select('*')
             .eq("question_id", i);
             // .eq("questionID", currentIndex)
@@ -79,13 +82,13 @@ export default function UserFeedback() {
 
   return (
     <>
-      <div className="mt-4">
+      <div className="rounded-lg bg-blue p-6 text-primary">
         <label className="block text-gray-700 text-lg font-bold mb-2">
           Please Enter Your Name:
         </label>
         <div className="flex">
           <input
-            className="appearance-none border border-gray-500 rounded w-80 py-2 px-3 leading-tight text-lg focus:outline-none focus:border-blue-500"
+            className="appearance-none rounded w-80 py-2 px-3 leading-tight text-lg focus:outline-none focus:border-blue-500"
             type="text"
             value={userName}
             onChange={handleNameChange}
