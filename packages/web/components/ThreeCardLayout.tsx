@@ -60,27 +60,12 @@ type SupabaseRealtimePayload<T = any> = {
   new: T;
 };
 
-
-// IDEA: Use similar system to the likes to format the choice
-
-function hasLikedCardBefore(cardId?: string): boolean {
-  if (!cardId || typeof window === "undefined") {
-    return false;
-  }
-  const likedCards = JSON.parse(localStorage.getItem("likedCards") || "[]");
-  return likedCards.includes(cardId);
-}
-
-function markCardAsLiked(cardId: string) {
-  const likedCards = JSON.parse(localStorage.getItem("likedCards") || "[]");
-  likedCards.push(cardId);
-  localStorage.setItem("likedCards", JSON.stringify(likedCards));
-}
-
-
-
 export default function ThreeCardLayout({ cards, userName }: { cards: ICard, userName: string }) {
+ 
+  // ... other imports ...
+  
 
+     
   const [msgIndex, setMsgIndex] = useState<number>(0);
   const isLoading = !cards.responses || cards.responses.length <= 0;
   const [value, copy] = useClipboardApi();
@@ -92,7 +77,23 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       : moment().fromNow()
   );
 
-  const [rubricScores, setRubricScores] = useState<Record<string, number>>({});
+
+  const [scores, setScores] = useState<Record<string, number>>({});
+
+  // Function to update scores
+  const handleScoreChange = (criterionId: string, score: number) => {
+      setScores(prevScores => ({ ...prevScores, [criterionId]: score }));
+  };
+
+  // Function to reset scores
+  const resetScores = () => {
+      // Reset logic - assuming each score should reset to 1
+      const resettedScores = Object.keys(scores).reduce((acc, criterionId) => {
+          acc[criterionId] = 1;
+          return acc;
+      }, {});
+      setScores(resettedScores);
+  };
 
   //Function that sends comments to supabase under respective card.comment
   const submitCommentFeedback = async ({
@@ -105,20 +106,15 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
     card: ICard;
   }) => {
     try {
-      
-      
       const { data: existingCard, error: fetchError } = await supabase
         .from("sawt_cards")
         .select("question_id, response_id")
-        .eq("id", card.id)
+        .eq("response_id", card.response_id)
         .single();
 
       if (fetchError) {
         throw fetchError;
       }
-      // console.log(existingCard)
-
-      // const newFeedbackId = uuidv4();
       const user_id = `${userName}_${Date.now()}`;
 
 
@@ -130,6 +126,7 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
       ])
       .select()
         
+
       if (error) {
         throw error;
       }
@@ -138,21 +135,14 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
 
   return (
     <div>
-
-    {/*
-     <div>
-      {cards && cards.map((card, index) => (
-        <h4 className="text-xl font-bold">{card.query}</h4>
-      ))}
-      </div>
-    <div> */}
     {cards && cards.map((card, index) => (
       <div className="flex justify-center space-x-4-x">
 
           <div key={index} className={`rounded-lg bg-blue p-6 text-primary`}>
           <h4 className="text-xl font-bold">{card.query}</h4>
   
-            <Link href={`${CARD_SHOW_PATH}/${card.id}`}>
+            {/* <Link href={`${CARD_SHOW_PATH}/${card.id}`}> */}
+          { /* LINK DOES the modal-- Need to change card.id to questionID to refer back to original card ID */}
               <div>
                 <h6 className="text-xs">
                   <span className="text-purple">
@@ -172,29 +162,27 @@ export default function ThreeCardLayout({ cards, userName }: { cards: ICard, use
               </div>
               <hr></hr>
           {/* <label className="flex justify-center mt-10 space-x-1-x">Rubric</label> */}
-          <Rubric 
+
+          <Rubric
             criteria={criteria}
-            onScoresChange={(scores) => setRubricScores(scores)}
-          />
-            </Link>
+            scores={scores}
+            onScoreChange={handleScoreChange} />
+
+          {/* </Link> */}
+
           <CommentBox
-            scores={rubricScores}
-            card = {card}
+            scores={scores}
+            card={card}
             onSubmit={submitCommentFeedback}
-          />
-
-
+            onReset={resetScores} />
+      
           
         </div>
         </div>
         ))
         }
         
-
-      
-
       </div>
-      // </div>
 
   );
 }

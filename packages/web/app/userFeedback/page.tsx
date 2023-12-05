@@ -67,6 +67,7 @@ export default function UserFeedback() {
           cardsArray.push(cards);
         }
         setCardArray(cardsArray);
+
       } catch (error) {
         console.error("Error fetching cards: ", error);
         // Handle the error appropriately in your UI

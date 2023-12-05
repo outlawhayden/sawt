@@ -8,16 +8,18 @@ import Rubric from '@/components/Rubric';
 interface CommentBoxProps {
     scores: Record<string, number>
     card: ICard;
-    onSubmit: ( data: { comment: string, card: ICard, scores: Record<string, number> }) => void;
+    onSubmit: (data: { comment: string, card: ICard, scores: Record<string, number> }) => void;
+    onReset: () => void;  
 }
 
-export default function CommentBox({ onSubmit, card, scores }: CommentBoxProps) {
+export default function CommentBox({ onSubmit, card, scores, onReset }: CommentBoxProps) {
     const [comment, setComment] = useState<string>("");
     // const [scores, setRubricScores] = useState<Record<string, number>>({});
 
     const handleSubmit = () => {
         onSubmit({ comment, card, scores});
         setComment("");
+        onReset();  // Reset the scores after submission
     };
 
 

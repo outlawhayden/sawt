@@ -1,32 +1,20 @@
 
-"use client"
-import React, { useState } from 'react';
 
-const Rubric = ({ criteria, onScoresChange }) => {
-    // This state will hold the scores for each criterion
-    const [scores, setScores] = useState(criteria.reduce((acc, criterion) => {
-      acc[criterion.id] = 1; // Initialize all criteria with a score of 1
-      return acc;
-    }, {}));
-  
-    const handleScoreChange = (criterionId, score) => {
-        setScores((prevScores) => {
-          const updatedScores = { ...prevScores, [criterionId]: score };
-          onScoresChange(updatedScores);
-          return updatedScores;  //formatted like this bc there was a lag in saving the last criteria
-        });
-      };
-  
-    // const saveScores = () => {
-    //   console.log(scores);
-        // TODO:
-            // Bundle with the userComments then
-            // send scores to supabase.
-            // Submit to userFeedback table.
+interface RubricProps {
+  criteria: Array<{
+      id: string;
+      description: string;
+  }>;
+  scores: Record<string, number>;
+  onScoreChange: (criterionId: string, score: number) => void;
+}
 
-    // };
+
+const Rubric: React.FC<RubricProps> = ({ criteria, scores, onScoreChange }) => {    // This state will hold the scores for each criterion
+
   
-    const circleButtonStyle = (score, criterionId) => ({
+  
+  const circleButtonStyle = (score: number, criterionId: string) => ({
         width: '40px', // Circle diameter
         height: '40px', // Circle diameter
         borderRadius: '50%', // Make it round
@@ -53,8 +41,10 @@ const Rubric = ({ criteria, onScoresChange }) => {
         alignItems: 'center', // Center children vertically
         flexDirection: 'column', // Stack children vertically
         padding: '20px', // Add padding around the container
-    };
-    
+  };
+  
+
+
     return (
         <div style= {containerStyle}>
             <div>
@@ -66,8 +56,8 @@ const Rubric = ({ criteria, onScoresChange }) => {
                             <button
                                 key={score}
                                 style={circleButtonStyle(score, criterion.id)}
-                                onClick={() => handleScoreChange(criterion.id, score)}
-                            >
+                                onClick={() => onScoreChange(criterion.id, score)}
+                              >
                                 {score}
                             </button>
                             ))}
@@ -75,7 +65,8 @@ const Rubric = ({ criteria, onScoresChange }) => {
                     </div>
                     ))}
                 {/* <button onClick={saveScores} style={submitButtonStyle}>Submit</button> */}
-                {/* <button style={submitButtonStyle}>Submit</button> */}
+          {/* <button style={submitButtonStyle}>Submit</button> */}
+
             </div>
         </div>
     );
