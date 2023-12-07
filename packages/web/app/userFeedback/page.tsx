@@ -21,7 +21,7 @@ export default function UserFeedback() {
 
   // Not the best way to do it-- we really should make each of these a new page and the next/prev buttons
   // should be linked to the next/prev page. But this is a quick fix for now.
-  const question_idArray = Array.from({ length: 98 }, (_, index) => index);
+  const question_idArray = Array.from({ length: 291 }, (_, index) => index);
   
 
   // const handlePrevClick = () => {
@@ -68,9 +68,9 @@ export default function UserFeedback() {
         console.log(shuffledQuestionIds)
         const cardsArray: Array<Array<ICard>> = [];
         const { data: cards, error } = await supabase
-          .from("sawt_cards")
+          .from(TABLES.FEEDBACK_CARDS)
           .select("*")
-          .eq("question_id", 0);
+          .eq("question_id", shuffledQuestionIds[0]);
         if (cards) {
           cardsArray.push(cards);
         }
@@ -90,7 +90,7 @@ export default function UserFeedback() {
     try {
       for (let i = 1; i < shuffledQuestionIds.length; i++) {
         const { data: cards, error } = await supabase
-          .from("sawt_cards")
+          .from(TABLES.FEEDBACK_CARDS)
           .select("*")
           .eq("question_id", shuffledQuestionIds[i])
 
