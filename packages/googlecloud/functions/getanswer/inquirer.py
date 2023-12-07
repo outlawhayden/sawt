@@ -116,24 +116,71 @@ def process_responses_llm(responses_llm, docs=None, card_type = "in_depth"):
 def get_indepth_response_from_query(df, db, query, k, query_type):
     logger.info("Performing in-depth summary query...")
 
-    # Convert the query to lowercase for case-insensitive comparison
-    query_lower = query.lower()
+    llm = ChatOpenAI(model_name="gpt-4")
 
-    if query_lower.startswith(
-        "what is the summary of ordinance"
-    ) or query_lower.startswith("what are the votes of ordinance"):
-        agent = create_pandas_dataframe_agent(
-            ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k"),
-            df,
-            agent_type=AgentType.OPENAI_FUNCTIONS,
-            verbose=True,
+    template_date_detection = """
+        Analyze the following query: "{query}".
+        Does this query pertain to a specific date or time period, or require sorting the city council documents by date? 
+        Respond with 'yes' or 'no'.
+    """
+
+    prompt_date = PromptTemplate(
+        input_variables=["query"],
+        template=template_date_detection,
+    )
+    is_date_related_chain = LLMChain(llm=llm, prompt=prompt_date)
+
+    is_date_related = is_date_related_chain.run(query=query)
+
+    # Modify the query if it is date-related
+    if is_date_related.strip().lower() == "yes":
+        print("Date related")
+        query = transform_query_for_date(query)
+
+    doc_list = db.similarity_search_with_score(query, k=k)
+    docs = sort_retrived_documents(doc_list)
+    docs_page_content = append_metadata_to_content(doc_list)
+
+    template = """
+    Documents: {docs}
+    
+    Question: {question}
+
+
+    Based on the information from the New Orleans city council documents provided, answer the following question: {question}. 
+    
+    If possible, extract the key points, decisions, and actions discussed during the city council meetings relevant to {question};
+    highlight any immediate shortcomings, mistakes, or negative actions by the city council relevant to {question}; 
+    elaborate on the implications and broader societal or community impacts of the identified issues relevant to {question};
+    investigate any underlying biases or assumptions present in the city council's discourse or actions relevant to {question}. 
+    
+    The final output should be in paragraph form without any formatting, such as prefixing your points with "a.", "b.", or "c."
+    The final output should not include any reference to the model's active sorting by date.
+    """
+
+    prompt = PromptTemplate(
+            input_variables=["question", "docs"],
+            template=template,
         )
-        responses_llm = agent.run(query)
-        return process_responses_llm(responses_llm)
 
-    else:
+    chain_llm = LLMChain(llm=llm, prompt=prompt)
+    responses_llm = chain_llm.run(
+            question=query, docs=docs_page_content, temperature=0
+        )
+
+    return process_responses_llm(responses_llm, docs, query_type)
+
+## varied responses for user annotation
+def get_varied_response_from_query(df, db, query, k, n = 1, card_type = "varied"):
+    logger.info("Performing varied summary query...")
+    master_response = {}
+    master_response["card_type"] = "varied"
+    response_list = {}
+    k_list = [3,5,7]
+    for i in range(n):
+
         llm = ChatOpenAI(model_name="gpt-4")
-        doc_list = db.similarity_search_with_score(query, k=k)
+        doc_list = db.similarity_search_with_score(query, k=k_list[i])
         docs = sort_retrived_documents(doc_list)
         docs_page_content = " ".join([d[0].page_content for d in docs])
 
@@ -142,8 +189,8 @@ def get_indepth_response_from_query(df, db, query, k, query_type):
         Question: {question}
         
         Based on the information from the New Orleans city council transcripts provided, answer the following question: {question}. 
-        Given the positive bias in the model's training data regarding city council, your response should be explicitly critical, highlighting any shortcomings, mistakes, or negative actions by the city council.
-        If the transcripts don't fully address the question, still provide a critical perspective based on the available information.
+        Provide a fair and balanced perspective. If the transcripts don't fully address the question, still provide a perspective based on the available information. 
+        Do not use double quotes anywhere in your response, and when quoting something from the prompt.
         """
 
         prompt = PromptTemplate(
@@ -151,48 +198,16 @@ def get_indepth_response_from_query(df, db, query, k, query_type):
             template=template,
         )
 
-        chain_llm = LLMChain(llm=llm, prompt=prompt)
-        responses_llm = chain_llm.run(
-            question=query, docs=docs_page_content, temperature=0
-        )
-
-        return process_responses_llm(responses_llm, docs, query_type)
-
-## varied responses for user annotation
-def get_varied_response_from_query(df, db, query, k, n = 1, card_type = "varied"):
-    logger.info("Performing varied summary query...")
 
 
-    llm = ChatOpenAI(model_name="gpt-4")
-    doc_list = db.similarity_search_with_score(query, k=k)
-    docs = sort_retrived_documents(doc_list)
-    docs_page_content = " ".join([d[0].page_content for d in docs])
-
-    template = """
-    Transcripts: {docs}
-    Question: {question}
-    
-    Based on the information from the New Orleans city council transcripts provided, answer the following question: {question}. 
-    Provide a fair and balanced perspective. If the transcripts don't fully address the question, still provide a perspective based on the available information.
-    """
-
-    prompt = PromptTemplate(
-        input_variables=["question", "docs"],
-        template=template,
-    )
-
-
-    master_response = {}
-    master_response["card_type"] = "varied"
-    response_list = {}
-    for i in range(n):
         chain_llm = LLMChain(llm=llm, prompt=prompt)
         responses_llm = chain_llm.run(
         question=query, docs=docs_page_content, temperature=0)
         single_response = process_responses_llm(responses_llm, docs, card_type)
-        #print(single_response, "\n")
+        single_response["k"] = k_list[i]
         response_list[i] = single_response
-    master_response["responses"] = response_list
+        master_response["responses"] = response_list
+    print(master_response)
     return master_response
 
 
@@ -227,7 +242,91 @@ def get_general_summary_response_from_query(db, query, k, query_type = RESPONSE_
     return card_json
 
 
-def route_question(df, db_general, db_in_depth, query, query_type, k=10, n = 3):
+
+def get_varied_response_from_query(df, db, query, k, n = 1, card_type = "varied"):
+    logger.info("Performing varied summary query...")
+    master_response = {}
+    master_response["card_type"] = "varied"
+    response_list = {}
+    k_list = [3,5,7]
+    for i in range(n):
+
+        llm = ChatOpenAI(model_name="gpt-4")
+        doc_list = db.similarity_search_with_score(query, k=k_list[i])
+        docs = sort_retrived_documents(doc_list)
+        docs_page_content = " ".join([d[0].page_content for d in docs])
+
+        template = """
+        Transcripts: {docs}
+        Question: {question}
+        
+        Based on the information from the New Orleans city council transcripts provided, answer the following question: {question}. 
+        Provide a fair and balanced perspective. If the transcripts don't fully address the question, still provide a perspective based on the available information.
+        """
+
+        prompt = PromptTemplate(
+            input_variables=["question", "docs"],
+            template=template,
+        )
+
+
+
+        chain_llm = LLMChain(llm=llm, prompt=prompt)
+        responses_llm = chain_llm.run(
+        question=query, docs=docs_page_content, temperature=0)
+        single_response = process_responses_llm(responses_llm, docs, card_type)
+        single_response["k"] = k_list[i]
+        response_list[i] = single_response
+        master_response["responses"] = response_list
+    print(master_response)
+    return master_response
+
+
+
+
+
+def get_varied_response_from_query(df, db, query, k, n = 1, card_type = "varied"):
+    logger.info("Performing varied summary query...")
+    master_response = {}
+    master_response["card_type"] = "varied"
+    response_list = {}
+    k_list = [3,5,7]
+    for i in range(n):
+
+        llm = ChatOpenAI(model_name="gpt-4")
+        doc_list = db.similarity_search_with_score(query, k=k_list[i])
+        docs = sort_retrived_documents(doc_list)
+        docs_page_content = " ".join([d[0].page_content for d in docs])
+
+        template = """
+        Transcripts: {docs}
+        Question: {question}
+        
+        Based on the information from the New Orleans city council transcripts provided, answer the following question: {question}. 
+        Provide a fair and balanced perspective. If the transcripts don't fully address the question, still provide a perspective based on the available information.
+        """
+
+        prompt = PromptTemplate(
+            input_variables=["question", "docs"],
+            template=template,
+        )
+
+
+
+        chain_llm = LLMChain(llm=llm, prompt=prompt)
+        responses_llm = chain_llm.run(
+        question=query, docs=docs_page_content, temperature=0)
+        single_response = process_responses_llm(responses_llm, docs, card_type)
+        single_response["k"] = k_list[i]
+        response_list[i] = single_response
+        master_response["responses"] = response_list
+    print(master_response)
+    return master_response
+
+
+
+
+def route_question(df, db_general, db_in_depth, query, query_type, k=20, n = 3):
     if query_type == RESPONSE_TYPE_DEPTH:
         return json.dumps(get_indepth_response_from_query(df, db_in_depth, query, k, query_type))
     elif query_type == RESPONSE_TYPE_VARIED:
