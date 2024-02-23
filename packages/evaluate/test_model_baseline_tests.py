@@ -4,9 +4,13 @@ import os
 
 import pytest
 from dotenv import find_dotenv, load_dotenv
-from .inquirer import answer_query
-from .helper import get_dbs
-from .api import RESPONSE_TYPE_DEPTH
+load_dotenv(find_dotenv("web/.env.local", raise_error_if_not_found=True))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../../backend/src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+
+from googlecloud.functions.getanswer.inquirer import answer_query
+from googlecloud.functions.getanswer.helper import get_dbs
+from googlecloud.functions.getanswer.api import RESPONSE_TYPE_DEPTH
 from deepeval import evaluate
 from deepeval.metrics import AnswerRelevancyMetric
 from deepeval.test_case import LLMTestCase
@@ -48,8 +52,7 @@ def test_query():
 
 #get query response and retrieval context
 def get_response_and_context(input):
-    load_dotenv(find_dotenv("../../../web/.env.local", raise_error_if_not_found=True))
-    sys.path.append(os.path.join(os.path.dirname(__file__), "../../../backend/src"))
+
 
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
