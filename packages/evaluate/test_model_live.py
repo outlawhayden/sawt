@@ -5,13 +5,22 @@ import os
 
 
 from dotenv import find_dotenv, load_dotenv
-from .inquirer import answer_query
-from .helper import get_dbs
-from .api import RESPONSE_TYPE_DEPTH
+
+load_dotenv(find_dotenv("web/.env", raise_error_if_not_found=True))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../../backend/src"))
+
 import pytest
 from deepeval import assert_test
 from deepeval.metrics import AnswerRelevancyMetric
 from deepeval.test_case import LLMTestCase
+
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+from googlecloud.functions.getanswer.inquirer import answer_query
+from googlecloud.functions.getanswer.helper import get_dbs
+from googlecloud.functions.getanswer.api import RESPONSE_TYPE_DEPTH
+
+
 
 
 def test_answer_relevancy():
@@ -21,11 +30,6 @@ def test_answer_relevancy():
         raw_input = input("Enter your query with response type (or 'quit' to exit): ")
         if raw_input.lower() == "quit":
             break
-
-
-
-        load_dotenv(find_dotenv("../../../web/.env", raise_error_if_not_found=True))
-        sys.path.append(os.path.join(os.path.dirname(__file__), "../../../backend/src"))
 
         logging.basicConfig(
             format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
