@@ -4,11 +4,9 @@ import os
 
 import pytest
 from dotenv import find_dotenv, load_dotenv
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-
-load_dotenv(find_dotenv("web/.env", raise_error_if_not_found=True))
+load_dotenv(find_dotenv("web/.env.local", raise_error_if_not_found=True))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../../backend/src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
 from googlecloud.functions.getanswer.inquirer import answer_query
 from googlecloud.functions.getanswer.helper import get_dbs

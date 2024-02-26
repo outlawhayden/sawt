@@ -2,12 +2,10 @@ import logging
 import sys
 import os
 
-
-
 from dotenv import find_dotenv, load_dotenv
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+load_dotenv(find_dotenv("web/.env", raise_error_if_not_found=True))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../../backend/src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
 from googlecloud.functions.getanswer.inquirer import answer_query
 from googlecloud.functions.getanswer.helper import get_dbs
@@ -20,9 +18,6 @@ import csv
 
 
 def test_answer_relevancy():
-
-    load_dotenv(find_dotenv("web/.env", raise_error_if_not_found=True))
-
 
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
